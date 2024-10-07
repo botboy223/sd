@@ -3,7 +3,7 @@ const USERNAME = "user123";
 const PASSWORD = "pass123";
 
 let products = JSON.parse(localStorage.getItem("products")) || {};  // Store all products with barcode as key
-let cart = [];  // Products added to the cart
+let cart = [];  // Products added to the cart with quantities
 let history = JSON.parse(localStorage.getItem("history")) || [];  // Store bill history
 
 function domReady(fn) {
@@ -16,21 +16,36 @@ domReady(function () {
     // Function for successful scan
     function onScanSuccess(decodedText, decodedResult) {
         if (products[decodedText]) {
-            // Product exists in storage, add to cart
-            cart.push(products[decodedText]);
-            displayCart();
+            // Product exists in storage, ask for quantity
+            let quantity = prompt(`Scanned Product: ${products[decodedText].name}\nPlease enter the quantity:`);
+            if (quantity && quantity > 0) {
+                cart.push({
+                    ...products[decodedText],
+                    quantity: parseInt(quantity)
+                });
+                displayCart();
+            } else {
+                alert("Invalid quantity. Please try again.");
+            }
         } else {
             // Product doesn't exist, prompt user to set product details
-            setTimeout(() => {
-                let productDetails = prompt(`New Product: ${decodedText}\nEnter details (name,price,expiry) separated by commas:`);
-                if (productDetails) {
-                    let [name, price, expiry] = productDetails.split(",");
-                    products[decodedText] = { barcode: decodedText, name, price: parseFloat(price), expiry };
-                    localStorage.setItem("products", JSON.stringify(products));
-                    cart.push(products[decodedText]);
+            let productDetails = prompt(`New Product: ${decodedText}\nEnter details (name,price,expiry) separated by commas:`);
+            if (productDetails) {
+                let [name, price, expiry] = productDetails.split(",");
+                products[decodedText] = { barcode: decodedText, name, price: parseFloat(price), expiry };
+                localStorage.setItem("products", JSON.stringify(products));
+
+                let quantity = prompt(`Product ${name} added.\nPlease enter the quantity:`);
+                if (quantity && quantity > 0) {
+                    cart.push({
+                        ...products[decodedText],
+                        quantity: parseInt(quantity)
+                    });
                     displayCart();
+                } else {
+                    alert("Invalid quantity. Please try again.");
                 }
-            }, 200);
+            }
         }
     }
 
@@ -52,18 +67,28 @@ function login() {
     }
 }
 
-// Display cart items
+// Display cart items with quantity
 function displayCart() {
     let productList = document.getElementById("product-list");
     productList.innerHTML = "";
     cart.forEach((product, index) => {
-        productList.innerHTML += `<div>Product: ${product.name} | Price: ₹${product.price} | Expiry: ${product.expiry}</div>`;
+        productList.innerHTML += `
+            <div>
+                Product: ${product.name} | Price: ₹${product.price} | Quantity: ${product.quantity} | Expiry: ${product.expiry} 
+                <button onclick="removeFromCart(${index})">Remove</button>
+            </div>`;
     });
 }
 
-// Generate bill
+// Remove item from cart
+function removeFromCart(index) {
+    cart.splice(index, 1);
+    displayCart();
+}
+
+// Generate bill with quantity logic
 function generateBill() {
-    let total = cart.reduce((sum, product) => sum + product.price, 0);
+    let total = cart.reduce((sum, product) => sum + (product.price * product.quantity), 0);
     let bill = {
         products: [...cart],
         total,
@@ -88,7 +113,8 @@ function viewHistory() {
     history.forEach((bill, index) => {
         document.getElementById("history-section").innerHTML += `<div>Bill ${index + 1} - Total: ₹${bill.total} - Date: ${bill.time}</div>`;
         bill.products.forEach((product) => {
-            document.getElementById("history-section").innerHTML += `<div>Product: ${product.name} | Price: ₹${product.price}</div>`;
+            document.getElementById("history-section").innerHTML += `
+                <div>Product: ${product.name} | Price: ₹${product.price} | Quantity: ${product.quantity}</div>`;
         });
     });
 
