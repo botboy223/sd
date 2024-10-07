@@ -1,93 +1,44 @@
+/* General styles for the app */
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f5f5f5;
-    margin: 0;
-    padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
+    background-color: rgb(128 0 0 / 66%);
+    margin: 0;
+    text-align: center;
 }
 
 .container {
-    max-width: 600px;
-    background-color: #ffffff;
-    padding: 20px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    text-align: center;
     width: 100%;
+    max-width: 500px;
 }
 
-.button-group {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+.section {
+    background-color: #ffffff;
+    padding: 20px;
+    border: 1.5px solid #b2b2b2;
+    border-radius: 0.25em;
+    margin-bottom: 10px;
+}
+
+#my-qr-reader {
+    padding: 10px;
+    border: 1px solid #b2b2b2;
+    border-radius: 8px;
+    margin-bottom: 15px;
 }
 
 button {
     padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    border: none;
-    background-color: #007bff;
+    border: 1px solid #b2b2b2;
+    background-color: #008000ad;
     color: white;
-    border-radius: 5px;
-    transition: background-color 0.3s;
+    font-size: 16px;
+    border-radius: 0.25em;
+    cursor: pointer;
 }
 
 button:hover {
-    background-color: #0056b3;
+    background-color: #008000;
 }
-
-.option {
-    margin-top: 20px;
-}
-
-.input-group {
-    display: flex;
-    flex-direction: column;
-    margin-top: 10px;
-    text-align: left;
-}
-
-label {
-    margin-bottom: 5px;
-}
-
-input {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-}
-
-#cart div {
-    margin-top: 10px;
-}
-
-@media (max-width: 600px) {
-    .container {
-        padding: 10px;
-    }
-
-    .button-group {
-        flex-direction: column;
-    }
-
-    button {
-        width: 100%;
-    }
-}
-
-
-/* New styles for import/export functionality */
-#option4 {
-    margin-top: 20px;
-}
-
-#upload-data {
-    margin-top: 10px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;}
