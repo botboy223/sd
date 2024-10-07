@@ -1,13 +1,7 @@
 {
   "users": [
-    
-    {
-      "username": "admin",
-      "password": "adminpass"
-    },
-    {
-      "username": "guest",
-      "password": "guestpass"
-    }
+    { "username": "user123", "password": "pass123" },
+    { "username": "johnDoe", "password": "john456" },
+    { "username": "admin", "password": "admin987" }
   ]
 }
