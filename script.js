@@ -1,10 +1,6 @@
-// Pre-filled login credentials
-const USERNAME = "user123";
-const PASSWORD = "pass123";
-
-let products = JSON.parse(localStorage.getItem("products")) || {};  // Store all products with barcode as key
 let cart = [];  // Products added to the cart with quantities
 let history = JSON.parse(localStorage.getItem("history")) || [];  // Store bill history
+let usersData = [];  // To store the users fetched from the JSON file
 
 function domReady(fn) {
     document.readyState === "complete" || document.readyState === "interactive"
@@ -12,7 +8,19 @@ function domReady(fn) {
         : document.addEventListener("DOMContentLoaded", fn);
 }
 
+// Fetch the users from the JSON file
+function fetchUsers() {
+    fetch('users.json')
+        .then(response => response.json())
+        .then(data => {
+            usersData = data.users;  // Store users in the usersData variable
+        })
+        .catch(error => console.error('Error fetching user data:', error));
+}
+
 domReady(function () {
+    fetchUsers();  // Fetch users data when DOM is ready
+
     // Function for successful scan
     function onScanSuccess(decodedText, decodedResult) {
         if (products[decodedText]) {
@@ -58,12 +66,16 @@ domReady(function () {
 function login() {
     let username = document.getElementById("username").value;
     let password = document.getElementById("password").value;
-    if (username === USERNAME && password === PASSWORD) {
+
+    // Validate the credentials against users from JSON
+    let validUser = usersData.find(user => user.username === username && user.password === password);
+    
+    if (validUser) {
         alert("Login successful!");
         document.getElementById("login-section").style.display = "none";
         document.getElementById("scanner-section").style.display = "block";
     } else {
-        alert("Invalid credentials!");
+        alert("Invalid credentials! Please try again.");
     }
 }
 
