@@ -1,161 +1,123 @@
-const USERNAME = "user123";
-const PASSWORD = "pass123";
-
-let products = JSON.parse(localStorage.getItem("products")) || {}; // Store all products with barcode as key
-let cart = []; // Products added to the cart with quantities
-let history = JSON.parse(localStorage.getItem("history")) || []; // Store bill history
-
 function domReady(fn) {
-    document.readyState === "complete" || document.readyState === "interactive"
-        ? setTimeout(fn, 1000)
-        : document.addEventListener("DOMContentLoaded", fn);
+    if (
+        document.readyState === "complete" ||
+        document.readyState === "interactive"
+    ) {
+        setTimeout(fn, 1);
+    } else {
+        document.addEventListener("DOMContentLoaded", fn);
+    }
 }
 
 domReady(function () {
-    // Function for successful scan
-    function onScanSuccess(decodedText, decodedResult) {
-        if (products[decodedText]) {
-            let quantity = prompt(`Scanned Product: ${products[decodedText].name}\nPlease enter the quantity:`);
-            if (quantity && quantity > 0) {
-                cart.push({
-                    ...products[decodedText],
-                    quantity: parseInt(quantity)
-                });
-                displayCart();
-            } else {
-                alert("Invalid quantity. Please try again.");
-            }
-        } else {
-            let productDetails = prompt(`New Product: ${decodedText}\nEnter details (name,price,expiry) separated by commas:`);
-            if (productDetails) {
-                let [name, price, expiry] = productDetails.split(",");
-                if (name && !isNaN(price) && expiry) {
-                    products[decodedText] = { barcode: decodedText, name, price: parseFloat(price), expiry };
-                    localStorage.setItem("products", JSON.stringify(products));
+    const scanner = new Html5QrcodeScanner("my-barcode-reader", { fps: 10, qrbox: 250 });
+    const products = [];
+    let total = 0;
 
-                    let quantity = prompt(`Product ${name} added.\nPlease enter the quantity:`);
-                    if (quantity && quantity > 0) {
-                        cart.push({
-                            ...products[decodedText],
-                            quantity: parseInt(quantity)
-                        });
-                        displayCart();
-                    } else {
-                        alert("Invalid quantity. Please try again.");
-                    }
-                } else {
-                    alert("Invalid product details. Please enter name, price, and expiry correctly.");
-                }
-            }
-        }
-    }
+    // DOM elements
+    const barcodeInput = document.getElementById("barcode");
+    const productNameInput = document.getElementById("product-name");
+    const productPriceInput = document.getElementById("product-price");
+    const productExpiryInput = document.getElementById("product-expiry");
+    const billList = document.getElementById("bill-list");
+    const billTotal = document.getElementById("bill-total");
+    const historyList = document.getElementById("history-list");
 
-    // Initialize barcode scanner
-    let htmlScanner = new Html5QrcodeScanner("my-qr-reader", { fps: 10, qrbox: 250 });
-    htmlScanner.render(onScanSuccess);
-});
-
-// Login functionality
-function login() {
-    let username = document.getElementById("username").value;
-    let password = document.getElementById("password").value;
-    let loginError = document.getElementById("login-error");
-
-    if (username === USERNAME && password === PASSWORD) {
-        alert("Login successful!");
-        document.getElementById("login-section").style.display = "none";
-        document.getElementById("scanner-section").style.display = "block";
-        document.getElementById("view-history").classList.remove("hidden");
-    } else {
-        loginError.textContent = "Invalid credentials!";
-    }
-}
-
-// Display cart items with quantity
-function displayCart() {
-    let productList = document.getElementById("product-list");
-    productList.innerHTML = "";
-    cart.forEach((product, index) => {
-        productList.innerHTML += `
-            <div>
-                <span>Product: ${product.name} | Price: ₹${product.price} | Quantity: ${product.quantity} | Expiry: ${product.expiry}</span>
-                <button onclick="removeFromCart(${index})">Remove</button>
-            </div>`;
-    });
-}
-
-// Remove item from cart
-function removeFromCart(index) {
-    cart.splice(index, 1);
-    displayCart();
-}
-
-// Generate bill with quantity logic
-function generateBill() {
-    let total = cart.reduce((sum, product) => sum + (product.price * product.quantity), 0);
-    let bill = {
-        products: [...cart],
-        total,
-        time: new Date().toLocaleString(),
-    };
-    history.push(bill);
-    localStorage.setItem("history", JSON.stringify(history));
-
-    document.getElementById("bill-section").style.display = "block";
-
-    // Create bill details
-    let billHTML = `<h3>Bill Generated</h3><div>Total: ₹${total}</div><div>Time: ${bill.time}</div>`;
-    billHTML += `<ul>`;
-    bill.products.forEach(product => {
-        billHTML += `<li>Product: ${product.name} | Price: ₹${product.price} | Quantity: ${product.quantity} | Total: ₹${product.price * product.quantity}</li>`;
-    });
-    billHTML += `</ul>`;
-
-    // Add a print button
-    billHTML += `<button onclick="printBill()">Print Bill</button>`;
-
-    document.getElementById("bill-section").innerHTML = billHTML;
-
-    // Clear cart
-    cart = [];
-    document.getElementById("product-list").innerHTML = "";
-}
-
-// Print bill functionality
-function printBill() {
-    let printContents = document.getElementById("bill-section").innerHTML;
-    let originalContents = document.body.innerHTML;
-
-    document.body.innerHTML = `<div>${printContents}</div>`;
-    window.print();
-    document.body.innerHTML = originalContents;
-}
-
-// View bill history
-function viewHistory() {
-    document.getElementById("history-section").style.display = "block";
-    document.getElementById("history-section").innerHTML = `<h3>Bill History</h3>`;
-
-    history.forEach((bill, index) => {
-        document.getElementById("history-section").innerHTML += `<div>Bill ${index + 1} - Total: ₹${bill.total} - Date: ${bill.time}</div>`;
-        bill.products.forEach((product) => {
-            document.getElementById("history-section").innerHTML += `
-                <div>Product: ${product.name} | Price: ₹${product.price} | Quantity: ${product.quantity}</div>`;
+    // Start scanner
+    document.getElementById("start-scanner").addEventListener("click", () => {
+        scanner.render((decodedText) => {
+            barcodeInput.value = decodedText;
         });
     });
 
-    let downloadBtn = document.createElement("button");
-    downloadBtn.innerText = "Download History (JSON)";
-    downloadBtn.onclick = () => downloadJSON(history, 'bill-history.json');
-    document.getElementById("history-section").appendChild(downloadBtn);
-}
+    // Add product
+    document.getElementById("add-product").addEventListener("click", () => {
+        const barcode = barcodeInput.value;
+        const name = productNameInput.value;
+        const price = parseFloat(productPriceInput.value);
+        const expiry = productExpiryInput.value;
 
-// Download JSON functionality
-function downloadJSON(data, filename) {
-    let jsonStr = JSON.stringify(data);
-    let blob = new Blob([jsonStr], { type: "application/json" });
-    let link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = filename;
-    link.click();
-}
+        if (!barcode || !name || isNaN(price)) {
+            alert("Please fill in all required fields.");
+            return;
+        }
+
+        products.push({ barcode, name, price, expiry });
+        updateBill();
+
+        // Clear inputs
+        barcodeInput.value = "";
+        productNameInput.value = "";
+        productPriceInput.value = "";
+        productExpiryInput.value = "";
+    });
+
+    // Update bill
+    function updateBill() {
+        billList.innerHTML = "";
+        total = 0;
+
+        products.forEach((product, index) => {
+            const li = document.createElement("li");
+            li.textContent = `${product.name} - $${product.price.toFixed(2)} (Expiry: ${product.expiry || "N/A"})`;
+            billList.appendChild(li);
+            total += product.price;
+        });
+
+        billTotal.textContent = `Total: $${total.toFixed(2)}`;
+    }
+
+    // Generate bill
+    document.getElementById("generate-bill").addEventListener("click", () => {
+        if (products.length === 0) {
+            alert("No products to generate bill.");
+            return;
+        }
+
+        const billDetails = {
+            products: [...products],
+            total: total.toFixed(2),
+            date: new Date().toLocaleString(),
+        };
+
+        // Save to history
+        saveBillToHistory(billDetails);
+        products.length = 0; // Clear current bill
+        updateBill();
+        alert("Bill generated!");
+    });
+
+    // Save bill to history
+    function saveBillToHistory(billDetails) {
+        const history = JSON.parse(localStorage.getItem("billHistory")) || [];
+        history.push(billDetails);
+        localStorage.setItem("billHistory", JSON.stringify(history));
+
+        const li = document.createElement("li");
+        li.textContent = `Bill on ${billDetails.date} - Total: $${billDetails.total}`;
+        historyList.appendChild(li);
+    }
+
+    // Print bill
+    document.getElementById("print-bill").addEventListener("click", () => {
+        const billContent = products
+            .map(product => `${product.name} - $${product.price.toFixed(2)}`)
+            .join("\n");
+
+        const printWindow = window.open("", "", "width=600,height=400");
+        printWindow.document.write("<pre>" + billContent + "\n\nTotal: $" + total.toFixed(2) + "</pre>");
+        printWindow.print();
+    });
+
+    // Load bill history
+    function loadBillHistory() {
+        const history = JSON.parse(localStorage.getItem("billHistory")) || [];
+        history.forEach(bill => {
+            const li = document.createElement("li");
+            li.textContent = `Bill on ${bill.date} - Total: $${bill.total}`;
+            historyList.appendChild(li);
+        });
+    }
+
+    loadBillHistory();
+});
