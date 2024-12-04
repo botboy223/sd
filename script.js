@@ -1,9 +1,9 @@
 const USERNAME = "user123";
 const PASSWORD = "pass123";
 
-let products = JSON.parse(localStorage.getItem("products")) || {};  // Store all products with barcode as key
-let cart = [];  // Products added to the cart with quantities
-let history = JSON.parse(localStorage.getItem("history")) || [];  // Store bill history
+let products = JSON.parse(localStorage.getItem("products")) || {}; // Store all products with barcode as key
+let cart = []; // Products added to the cart with quantities
+let history = JSON.parse(localStorage.getItem("history")) || []; // Store bill history
 
 function domReady(fn) {
     document.readyState === "complete" || document.readyState === "interactive"
@@ -102,10 +102,33 @@ function generateBill() {
     localStorage.setItem("history", JSON.stringify(history));
 
     document.getElementById("bill-section").style.display = "block";
-    document.getElementById("bill-section").innerHTML = `<h3>Bill Generated</h3><div>Total: ₹${total}</div>`;
 
+    // Create bill details
+    let billHTML = `<h3>Bill Generated</h3><div>Total: ₹${total}</div><div>Time: ${bill.time}</div>`;
+    billHTML += `<ul>`;
+    bill.products.forEach(product => {
+        billHTML += `<li>Product: ${product.name} | Price: ₹${product.price} | Quantity: ${product.quantity} | Total: ₹${product.price * product.quantity}</li>`;
+    });
+    billHTML += `</ul>`;
+
+    // Add a print button
+    billHTML += `<button onclick="printBill()">Print Bill</button>`;
+
+    document.getElementById("bill-section").innerHTML = billHTML;
+
+    // Clear cart
     cart = [];
     document.getElementById("product-list").innerHTML = "";
+}
+
+// Print bill functionality
+function printBill() {
+    let printContents = document.getElementById("bill-section").innerHTML;
+    let originalContents = document.body.innerHTML;
+
+    document.body.innerHTML = `<div>${printContents}</div>`;
+    window.print();
+    document.body.innerHTML = originalContents;
 }
 
 // View bill history
